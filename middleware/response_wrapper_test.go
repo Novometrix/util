@@ -13,6 +13,7 @@ import (
 func TestResponseWrapper_Write(t *testing.T) {
 	type TestCfg struct {
 		URL            string
+		Method         string
 		RequestID      string
 		ResponseStatus int
 		Input          interface{}
@@ -51,15 +52,17 @@ func TestResponseWrapper_Write(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		cfg     TestCfg
-		headers DefaultRequestHeaders
-		assert  func(t *testing.T, r *httptest.ResponseRecorder, e BaseResponse)
+		name       string
+		customMock func(cfg TestCfg)
+		cfg        TestCfg
+		headers    DefaultRequestHeaders
+		assert     func(t *testing.T, r *httptest.ResponseRecorder, e BaseResponse)
 	}{
 		{
 			name: "test",
 			cfg: TestCfg{
 				URL:            "/test/1",
+				Method:         http.MethodPost,
 				RequestID:      TestID,
 				ResponseStatus: 200,
 				Input: InputStruct{
@@ -90,6 +93,7 @@ func TestResponseWrapper_Write(t *testing.T) {
 			name: "test response status and code #1",
 			cfg: TestCfg{
 				URL:            "/test/2",
+				Method:         http.MethodPost,
 				RequestID:      TestID,
 				ResponseStatus: 404,
 				Input: InputStruct{
@@ -114,6 +118,7 @@ func TestResponseWrapper_Write(t *testing.T) {
 			name: "test response status and code #2",
 			cfg: TestCfg{
 				URL:            "/test/3",
+				Method:         http.MethodPost,
 				RequestID:      TestID,
 				ResponseStatus: 301,
 				Input: InputStruct{
@@ -134,14 +139,52 @@ func TestResponseWrapper_Write(t *testing.T) {
 				a.Equal(e.StatusCode, r.Code)
 			},
 		},
+		{
+			name: "test skip GET requests",
+			cfg: TestCfg{
+				URL:            "/test/4",
+				Method:         http.MethodGet,
+				RequestID:      TestID,
+				ResponseStatus: 200,
+				Input: InputStruct{
+					Name: "hi",
+					Age:  500,
+				},
+			},
+			customMock: func(cfg TestCfg) {
+				e.GET(cfg.URL, func(c *gin.Context) {
+					c.JSON(cfg.ResponseStatus, cfg.Input)
+				})
+			},
+			headers: DefaultRequestHeaders{
+				RequestID: TestID,
+			},
+			assert: func(t *testing.T, r *httptest.ResponseRecorder, e BaseResponse) {
+				a := assert.New(t)
+
+				var resp InputStruct
+				err := json.Unmarshal(r.Body.Bytes(), &resp)
+
+				var expected InputStruct
+				p, _ := json.Marshal(e.Payload)
+				_ = json.Unmarshal(p, &expected)
+
+				a.NoError(err)
+				a.Equal(expected, resp)
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mock(tt.cfg)
+			if tt.customMock != nil {
+				tt.customMock(tt.cfg)
+			} else {
+				mock(tt.cfg)
+			}
 
 			b, _ := json.Marshal(tt.cfg.Input)
-			req, _ := http.NewRequest(http.MethodPost, tt.cfg.URL, bytes.NewBuffer(b))
+			req, _ := http.NewRequest(tt.cfg.Method, tt.cfg.URL, bytes.NewBuffer(b))
 			req.Header.Add("X-Request-ID", tt.cfg.RequestID)
 
 			c.Request = req
