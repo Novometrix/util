@@ -50,6 +50,11 @@ func (rw responseWrapper) Write(b []byte) (int, error) {
 }
 
 func ResponseWrapperMiddleware(c *gin.Context) {
+	if c.Request.Method == http.MethodGet {
+		c.Next()
+		return
+	}
+
 	reqHeaders := DefaultRequestHeaders{}
 
 	if err := c.ShouldBindHeader(&reqHeaders); err != nil {
