@@ -83,6 +83,7 @@ func TestResponseWrapper_Write(t *testing.T) {
 				m, _ := json.Marshal(resp.Payload)
 				_ = json.Unmarshal(m, &payload)
 
+				a.Equal(r.Header().Get("Content-Type"), "application/json; charset=utf-8")
 				a.Equal(e.Payload, payload)
 				a.Equal(e.Status, resp.Status)
 				a.Equal(e.StatusCode, r.Code)
@@ -110,6 +111,7 @@ func TestResponseWrapper_Write(t *testing.T) {
 				var resp BaseResponse
 				_ = json.Unmarshal(r.Body.Bytes(), &resp)
 
+				a.Equal(r.Header().Get("Content-Type"), "application/json; charset=utf-8")
 				a.Equal(e.Status, resp.Status)
 				a.Equal(e.StatusCode, r.Code)
 			},
@@ -135,6 +137,7 @@ func TestResponseWrapper_Write(t *testing.T) {
 				var resp BaseResponse
 				_ = json.Unmarshal(r.Body.Bytes(), &resp)
 
+				a.Equal(r.Header().Get("Content-Type"), "application/json; charset=utf-8")
 				a.Equal(e.Status, resp.Status)
 				a.Equal(e.StatusCode, r.Code)
 			},
@@ -169,6 +172,7 @@ func TestResponseWrapper_Write(t *testing.T) {
 				p, _ := json.Marshal(e.Payload)
 				_ = json.Unmarshal(p, &expected)
 
+				a.Equal(r.Header().Get("Content-Type"), "application/json; charset=utf-8")
 				a.NoError(err)
 				a.Equal(expected, resp)
 			},
