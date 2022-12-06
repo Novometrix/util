@@ -46,6 +46,8 @@ func (rw responseWrapper) Write(b []byte) (int, error) {
 		return rw.ResponseWriter.Write(b)
 	}
 
+	rw.ResponseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+
 	return rw.ResponseWriter.Write(r)
 }
 
@@ -65,7 +67,6 @@ func ResponseWrapperMiddleware(c *gin.Context) {
 		ResponseWriter: c.Writer,
 		Headers:        reqHeaders,
 	}
-
 	c.Writer = rw
 	c.Next()
 }
