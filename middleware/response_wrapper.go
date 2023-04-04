@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
+	"github.com/Novometrix/util/util"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -51,22 +52,23 @@ func (rw responseWrapper) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(r)
 }
 
-func ResponseWrapperMiddleware(c *gin.Context) {
-	if c.Request.Method == http.MethodGet {
+func ResponseWrapperMiddleware(ignoredMethods ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if util.SliceContains(ignoredMethods, c.Request.Method) {
+			c.Next()
+			return
+		}
+		reqHeaders := DefaultRequestHeaders{}
+
+		if err := c.ShouldBindHeader(&reqHeaders); err != nil {
+			log.Errorf("failed to bind request headers with error: %v", err)
+		}
+
+		rw := &responseWrapper{
+			ResponseWriter: c.Writer,
+			Headers:        reqHeaders,
+		}
+		c.Writer = rw
 		c.Next()
-		return
 	}
-
-	reqHeaders := DefaultRequestHeaders{}
-
-	if err := c.ShouldBindHeader(&reqHeaders); err != nil {
-		log.Errorf("failed to bind request headers with error: %v", err)
-	}
-
-	rw := &responseWrapper{
-		ResponseWriter: c.Writer,
-		Headers:        reqHeaders,
-	}
-	c.Writer = rw
-	c.Next()
 }
