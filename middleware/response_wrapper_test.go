@@ -27,9 +27,10 @@ func TestResponseWrapper_Write(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	c, e := gin.CreateTestContext(w)
-	e.Use(ResponseWrapperMiddleware)
 
 	mock := func(cfg TestCfg) {
+		e.Use(ResponseWrapperMiddleware())
+
 		e.POST(cfg.URL, func(c *gin.Context) {
 			c.JSON(cfg.ResponseStatus, cfg.Input)
 		})
@@ -48,7 +49,6 @@ func TestResponseWrapper_Write(t *testing.T) {
 		w = httptest.NewRecorder()
 
 		c, e = gin.CreateTestContext(w)
-		e.Use(ResponseWrapperMiddleware)
 	}
 
 	tests := []struct {
@@ -142,42 +142,80 @@ func TestResponseWrapper_Write(t *testing.T) {
 				a.Equal(e.StatusCode, r.Code)
 			},
 		},
-		// TODO! Fix
-		// {
-		// 	name: "test skip GET requests",
-		// 	cfg: TestCfg{
-		// 		URL:            "/test/4",
-		// 		Method:         http.MethodGet,
-		// 		RequestID:      TestID,
-		// 		ResponseStatus: 200,
-		// 		Input: InputStruct{
-		// 			Name: "hi",
-		// 			Age:  500,
-		// 		},
-		// 	},
-		// 	customMock: func(cfg TestCfg) {
-		// 		e.GET(cfg.URL, func(c *gin.Context) {
-		// 			c.JSON(cfg.ResponseStatus, cfg.Input)
-		// 		})
-		// 	},
-		// 	headers: DefaultRequestHeaders{
-		// 		RequestID: TestID,
-		// 	},
-		// 	assert: func(t *testing.T, r *httptest.ResponseRecorder, e BaseResponse[interface{}]) {
-		// 		a := assert.New(t)
+		{
+			name: "test skip GET requests",
+			cfg: TestCfg{
+				URL:            "/test/4",
+				Method:         http.MethodGet,
+				RequestID:      TestID,
+				ResponseStatus: 200,
+				Input: InputStruct{
+					Name: "hi",
+					Age:  500,
+				},
+			},
+			customMock: func(cfg TestCfg) {
+				e.Use(ResponseWrapperMiddleware(cfg.Method))
 
-		// 		var resp InputStruct
-		// 		err := json.Unmarshal(r.Body.Bytes(), &resp)
+				e.GET(cfg.URL, func(c *gin.Context) {
+					c.JSON(cfg.ResponseStatus, cfg.Input)
+				})
+			},
+			headers: DefaultRequestHeaders{
+				RequestID: TestID,
+			},
+			assert: func(t *testing.T, r *httptest.ResponseRecorder, e BaseResponse[interface{}]) {
+				a := assert.New(t)
 
-		// 		var expected InputStruct
-		// 		p, _ := json.Marshal(e.Payload)
-		// 		_ = json.Unmarshal(p, &expected)
+				var resp InputStruct
+				err := json.Unmarshal(r.Body.Bytes(), &resp)
 
-		// 		a.Equal(r.Header().Get("Content-Type"), "application/json; charset=utf-8")
-		// 		a.NoError(err)
-		// 		a.Equal(expected, resp)
-		// 	},
-		// },
+				var expected InputStruct
+				p, _ := json.Marshal(e.Payload)
+				_ = json.Unmarshal(p, &expected)
+
+				a.Equal(r.Header().Get("Content-Type"), "application/json; charset=utf-8")
+				a.NoError(err)
+				a.Equal(expected, resp)
+			},
+		},
+		{
+			name: "test skip POST requests",
+			cfg: TestCfg{
+				URL:            "/test/5",
+				Method:         http.MethodPost,
+				RequestID:      TestID,
+				ResponseStatus: 200,
+				Input: InputStruct{
+					Name: "hi",
+					Age:  500,
+				},
+			},
+			customMock: func(cfg TestCfg) {
+				e.Use(ResponseWrapperMiddleware(cfg.Method))
+
+				e.POST(cfg.URL, func(c *gin.Context) {
+					c.JSON(cfg.ResponseStatus, cfg.Input)
+				})
+			},
+			headers: DefaultRequestHeaders{
+				RequestID: TestID,
+			},
+			assert: func(t *testing.T, r *httptest.ResponseRecorder, e BaseResponse[interface{}]) {
+				a := assert.New(t)
+
+				var resp InputStruct
+				err := json.Unmarshal(r.Body.Bytes(), &resp)
+
+				var expected InputStruct
+				p, _ := json.Marshal(e.Payload)
+				_ = json.Unmarshal(p, &expected)
+
+				a.Equal(r.Header().Get("Content-Type"), "application/json; charset=utf-8")
+				a.NoError(err)
+				a.Equal(expected, resp)
+			},
+		},
 	}
 
 	for _, tt := range tests {
