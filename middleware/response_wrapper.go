@@ -10,8 +10,8 @@ import (
 
 type BaseResponse struct {
 	Status     string      `json:"status"`
-	StatusCode int         `json:"statusCode"`
-	RequestID  string      `json:"requestID"`
+	StatusCode int         `json:"status_code"`
+	RequestID  string      `json:"request_id"`
 	Payload    interface{} `json:"payload,omitempty"`
 }
 
