@@ -8,11 +8,11 @@ import (
 	"net/http"
 )
 
-type BaseResponse struct {
+type BaseResponse[T any] struct {
 	Status     string      `json:"status"`
 	StatusCode int         `json:"status_code"`
 	RequestID  string      `json:"request_id"`
-	Payload    interface{} `json:"payload,omitempty"`
+	Payload    T `json:"payload,omitempty"`
 }
 
 type DefaultRequestHeaders struct {
@@ -34,7 +34,7 @@ func (rw responseWrapper) Write(b []byte) (int, error) {
 
 	_ = json.Unmarshal(b, &payload)
 
-	resp := BaseResponse{
+	resp := BaseResponse[interface{}]{
 		Status:     http.StatusText(httpStatus),
 		StatusCode: httpStatus,
 		RequestID:  rw.Headers.RequestID,
