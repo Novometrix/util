@@ -14,10 +14,11 @@ type authentication struct {
 	AuthenticationType
 	errorResponse any
 	contextKey    string
+	cookieName    string
 }
 
 type Authentication interface {
-	RequireAuthenticatedMiddleware(atKey string) gin.HandlerFunc
+	RequireAuthenticatedMiddleware() gin.HandlerFunc
 }
 
 func NewAuthenticationMiddleware(ssw *ssw.SSWGoJWT, options ...func(*authentication)) Authentication {
@@ -26,6 +27,7 @@ func NewAuthenticationMiddleware(ssw *ssw.SSWGoJWT, options ...func(*authenticat
 		AuthenticationType: Token,
 		errorResponse:      http.StatusText(http.StatusUnauthorized),
 		contextKey:         "user",
+		cookieName:         "access-token",
 	}
 
 	for _, opt := range options {
@@ -53,13 +55,19 @@ func WithContextKey(k string) func(*authentication) {
 	}
 }
 
-func (a authentication) RequireAuthenticatedMiddleware(accessTokenKey string) gin.HandlerFunc {
+func WithCookieName(n string) func(*authentication) {
+	return func(a *authentication) {
+		a.cookieName = n
+	}
+}
+
+func (a authentication) RequireAuthenticatedMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var at string
 
 		switch a.AuthenticationType {
 		case Cookie:
-			atCookie, _ := c.Cookie(accessTokenKey)
+			atCookie, _ := c.Cookie(a.cookieName)
 			if atCookie == "" {
 				c.JSON(http.StatusUnauthorized, a.errorResponse)
 				c.Abort()
@@ -90,7 +98,7 @@ func (a authentication) RequireAuthenticatedMiddleware(accessTokenKey string) gi
 			return
 		}
 
-		c.Set(a.contextKey, claims)
+		c.Set(a.contextKey, *claims)
 		c.Next()
 	}
 }
