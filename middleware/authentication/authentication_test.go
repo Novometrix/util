@@ -195,6 +195,40 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				sswMock.AssertExpectations(t)
 			},
 		},
+		{
+			name: "error_token_expired",
+			args: args{
+				authType:    Cookie,
+				accessToken: testJWTString,
+				contextKey:  "test-user",
+				cookieName:  cookieStr,
+			},
+			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
+				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
+				req.AddCookie(&cookie)
+
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName))
+
+				r.Use(mw.RequireAuthenticatedMiddleware())
+
+			},
+			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
+				sswMock.On("ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims")).Return(jwt.ErrTokenExpired).Run(func(fArg mock.Arguments) {
+					at := fArg.Get(0).(string)
+					assert.Equal(t, testJWTString, at)
+
+					jwtMap := fArg.Get(1).(*jwt.MapClaims)
+					m := *jwtMap
+					m["sub"] = testUsername
+				}).Once()
+			},
+			verify: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, w *httptest.ResponseRecorder, a args) {
+				assert.Equal(t, http.StatusUnauthorized, w.Code)
+				assert.Contains(t, w.Body.String(), TokenExpiredError.Error())
+
+				sswMock.AssertExpectations(t)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -286,6 +320,15 @@ func TestFunctionalOptions(t *testing.T) {
 				WithCookieName(testString)(m)
 
 				assert.EqualValues(t, testString, m.cookieName)
+			},
+		},
+		{
+			name: "success_WithTokenExpiredResponse",
+			run: func(t *testing.T) {
+				m := &authentication{}
+				WithTokenExpiredResponse(testError)(m)
+
+				assert.EqualValues(t, testError, m.tokenExpiredResponse)
 			},
 		},
 	}
