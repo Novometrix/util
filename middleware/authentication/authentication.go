@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"errors"
 	ssw "github.com/RaymondSalim/ssw-go-jwt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -12,9 +13,10 @@ type authentication struct {
 	ssw ssw.SSWGoJWT
 
 	AuthenticationType
-	errorResponse any
-	contextKey    string
-	cookieName    string
+	errorResponse        any
+	tokenExpiredResponse any
+	contextKey           string
+	cookieName           string
 }
 
 type Authentication interface {
@@ -23,11 +25,12 @@ type Authentication interface {
 
 func NewAuthenticationMiddleware(ssw *ssw.SSWGoJWT, options ...func(*authentication)) Authentication {
 	a := &authentication{
-		ssw:                *ssw,
-		AuthenticationType: Token,
-		errorResponse:      http.StatusText(http.StatusUnauthorized),
-		contextKey:         "user",
-		cookieName:         "access-token",
+		ssw:                  *ssw,
+		AuthenticationType:   Token,
+		errorResponse:        response{Error: http.StatusText(http.StatusUnauthorized)},
+		tokenExpiredResponse: response{Error: TokenExpiredError.Error()},
+		contextKey:           "user",
+		cookieName:           "access-token",
 	}
 
 	for _, opt := range options {
@@ -58,6 +61,12 @@ func WithContextKey(k string) func(*authentication) {
 func WithCookieName(n string) func(*authentication) {
 	return func(a *authentication) {
 		a.cookieName = n
+	}
+}
+
+func WithTokenExpiredResponse(r any) func(*authentication) {
+	return func(a *authentication) {
+		a.tokenExpiredResponse = r
 	}
 }
 
@@ -92,7 +101,12 @@ func (a authentication) RequireAuthenticatedMiddleware() gin.HandlerFunc {
 		claims := &jwt.MapClaims{}
 		err := a.ssw.ValidateAccessTokenWithClaims(at, claims)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, a.errorResponse)
+			if errors.Is(err, jwt.ErrTokenExpired) {
+				c.JSON(http.StatusUnauthorized, a.tokenExpiredResponse)
+			} else {
+				c.JSON(http.StatusUnauthorized, a.errorResponse)
+			}
+
 			c.Abort()
 
 			return
