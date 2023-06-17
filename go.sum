@@ -6,6 +6,8 @@ github.com/RaymondSalim/ssw-go-jwt v0.1.3-0.20230427180521-1400d01223b2 h1:aT8pc
 github.com/RaymondSalim/ssw-go-jwt v0.1.3-0.20230427180521-1400d01223b2/go.mod h1:NGaR5O8AlQawSYl4zXd5Fay0VAv/gi6iPORinwaq9To=
 github.com/RaymondSalim/ssw-go-jwt v0.1.3 h1:HiuzojYebxoslmtLReFfvY1zc24X2mgRNyyOd83NrCc=
 github.com/RaymondSalim/ssw-go-jwt v0.1.3/go.mod h1:NGaR5O8AlQawSYl4zXd5Fay0VAv/gi6iPORinwaq9To=
+github.com/RaymondSalim/ssw-go-jwt v0.1.7 h1:MIsiqCnTP9ybz9XEk2sNX2/p+j3UCFNDRdg4w70zvzk=
+github.com/RaymondSalim/ssw-go-jwt v0.1.7/go.mod h1:NGaR5O8AlQawSYl4zXd5Fay0VAv/gi6iPORinwaq9To=
 github.com/creack/pty v1.1.9 h1:uDmaGzcdjhF4i/plgjmEsriH11Y0o7RKapEf/LDaM3w=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

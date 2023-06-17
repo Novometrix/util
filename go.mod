@@ -3,7 +3,7 @@ module github.com/Novometrix/util
 go 1.18
 
 require (
-	github.com/RaymondSalim/ssw-go-jwt v0.1.3 // indirect
+	github.com/RaymondSalim/ssw-go-jwt v0.1.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.8.1 // indirect
