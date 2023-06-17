@@ -46,6 +46,10 @@ func WithErrorResponse(err any) func(*authentication) {
 	}
 }
 
+// WithAuthenticationType sets the type of the authentication for the whole middleware instance
+// There are three possible authentication types.
+// For AuthenticationType == Both, access token will first be read from cookie. If it does not exist, then it will be read from the token.
+// Note that the validity of the token will not be assessed on this stage. If access token from cookie exist but is invalid, it WILL NOT continue reading from the token.
 func WithAuthenticationType(t AuthenticationType) func(*authentication) {
 	return func(a *authentication) {
 		a.AuthenticationType = t
@@ -72,30 +76,39 @@ func WithTokenExpiredResponse(r any) func(*authentication) {
 
 func (a authentication) RequireAuthenticatedMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		getAccessTokenFromCookie := func() string {
+			atCookie, _ := c.Cookie(a.cookieName)
+			return atCookie
+		}
+
+		getAccessTokenFromToken := func() string {
+			authHeader := c.Request.Header.Get("Authorization")
+			t := strings.Split(authHeader, " ")
+			if len(t) == 2 && t[1] != "" {
+				return t[1]
+			}
+			return ""
+		}
 		var at string
 
 		switch a.AuthenticationType {
 		case Cookie:
-			atCookie, _ := c.Cookie(a.cookieName)
-			if atCookie == "" {
-				c.JSON(http.StatusUnauthorized, a.errorResponse)
-				c.Abort()
-
-				return
-			}
-
-			at = atCookie
+			at = getAccessTokenFromCookie()
 		case Token:
-			authHeader := c.Request.Header.Get("Authorization")
-			t := strings.Split(authHeader, " ")
-			if len(t) == 2 && t[1] != "" {
-				at = t[1]
-			} else {
-				c.JSON(http.StatusUnauthorized, a.errorResponse)
-				c.Abort()
-
-				return
+			at = getAccessTokenFromToken()
+		case Both:
+			atCookie := getAccessTokenFromCookie()
+			if len(atCookie) > 0 {
+				at = atCookie
+				break
 			}
+			at = getAccessTokenFromToken()
+		}
+
+		if len(at) == 0 {
+			c.JSON(http.StatusUnauthorized, a.errorResponse)
+			c.Abort()
+			return
 		}
 
 		claims := &jwt.MapClaims{}

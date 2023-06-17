@@ -107,6 +107,71 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 			},
 		},
 		{
+			name: "success_both_cookie",
+			args: args{
+				authType:    Both,
+				accessToken: testJWTString,
+				contextKey:  "test-user",
+				cookieName:  cookieStr,
+			},
+			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
+				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
+				req.AddCookie(&cookie)
+
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName))
+
+				r.Use(mw.RequireAuthenticatedMiddleware())
+
+			},
+			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
+				sswMock.On("ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims")).Return(nil).Run(func(fArg mock.Arguments) {
+					at := fArg.Get(0).(string)
+					assert.Equal(t, testJWTString, at)
+
+					jwtMap := fArg.Get(1).(*jwt.MapClaims)
+					m := *jwtMap
+					m["sub"] = testStringNoWhitespace
+				}).Once()
+			},
+			verify: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, w *httptest.ResponseRecorder, a args) {
+				assert.Equal(t, http.StatusOK, w.Code)
+				assert.Equal(t, testStringNoWhitespace, w.Body.String())
+
+				sswMock.AssertExpectations(t)
+			},
+		},
+		{
+			name: "success_both_token",
+			args: args{
+				authType:    Both,
+				accessToken: testJWTString,
+				contextKey:  "test-user",
+			},
+			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
+				req.Header.Set("Authorization", "Bearer "+a.accessToken)
+
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey))
+
+				r.Use(mw.RequireAuthenticatedMiddleware())
+			},
+			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
+				sswMock.On("ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims")).Return(nil).Run(func(fArg mock.Arguments) {
+					at := fArg.Get(0).(string)
+					assert.Equal(t, testJWTString, at)
+
+					jwtMap := fArg.Get(1).(*jwt.MapClaims)
+					m := *jwtMap
+					m["sub"] = testStringNoWhitespace
+				}).Once()
+			},
+			verify: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, w *httptest.ResponseRecorder, a args) {
+				assert.Equal(t, http.StatusOK, w.Code)
+				assert.Equal(t, testStringNoWhitespace, w.Body.String())
+
+				sswMock.AssertExpectations(t)
+			},
+		},
+		{
 			name: "error_cookie_no_cookie",
 			args: args{
 				authType:    Cookie,
@@ -170,7 +235,7 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 			},
 		},
 		{
-			name: "error_invalid_token",
+			name: "error_cookie_invalid_token",
 			args: args{
 				authType:    Cookie,
 				accessToken: testJWTString,
@@ -258,7 +323,7 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 }
 
 func TestNewAuthenticationMiddleware(t *testing.T) {
-	var ssw ssw.SSWGoJWT = ssw.NewMockSSWGoJWT(t)
+	var sswInstance ssw.SSWGoJWT = ssw.NewMockSSWGoJWT(t)
 
 	tests := []struct {
 		name string
@@ -267,7 +332,7 @@ func TestNewAuthenticationMiddleware(t *testing.T) {
 		{
 			name: "success",
 			run: func(t *testing.T) {
-				m := NewAuthenticationMiddleware(&ssw)
+				m := NewAuthenticationMiddleware(&sswInstance)
 
 				assert.IsType(t, &authentication{}, m)
 			},
