@@ -5,6 +5,7 @@ import "errors"
 const (
 	Token AuthenticationType = iota
 	Cookie
+	Both
 )
 
 var (
