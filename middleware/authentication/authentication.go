@@ -13,24 +13,26 @@ type authentication struct {
 	ssw ssw.SSWGoJWT
 
 	AuthenticationType
-	errorResponse        any
-	tokenExpiredResponse any
-	contextKey           string
-	cookieName           string
+	errorResponse          any
+	tokenExpiredResponse   any
+	contextKey             string
+	cookieName             string
+	abortOnUnauthenticated bool
 }
 
 type Authentication interface {
-	RequireAuthenticatedMiddleware(abortOnUnauthenticated bool) gin.HandlerFunc
+	RequireAuthenticatedMiddleware(shouldAbortOnUnauthenticated ...bool) gin.HandlerFunc
 }
 
 func NewAuthenticationMiddleware(ssw *ssw.SSWGoJWT, options ...func(*authentication)) Authentication {
 	a := &authentication{
-		ssw:                  *ssw,
-		AuthenticationType:   Token,
-		errorResponse:        response{Error: http.StatusText(http.StatusUnauthorized)},
-		tokenExpiredResponse: response{Error: TokenExpiredError.Error()},
-		contextKey:           "user",
-		cookieName:           "access-token",
+		ssw:                    *ssw,
+		AuthenticationType:     Token,
+		errorResponse:          response{Error: http.StatusText(http.StatusUnauthorized)},
+		tokenExpiredResponse:   response{Error: TokenExpiredError.Error()},
+		contextKey:             "user",
+		cookieName:             "access-token",
+		abortOnUnauthenticated: true,
 	}
 
 	for _, opt := range options {
@@ -74,7 +76,18 @@ func WithTokenExpiredResponse(r any) func(*authentication) {
 	}
 }
 
-func (a authentication) RequireAuthenticatedMiddleware(abortOnUnauthenticated bool) gin.HandlerFunc {
+func WithAbortOnUnauthenticated(ab bool) func(*authentication) {
+	return func(a *authentication) {
+		a.abortOnUnauthenticated = ab
+	}
+}
+
+func (a authentication) RequireAuthenticatedMiddleware(shouldAbortOnUnauthenticated ...bool) gin.HandlerFunc {
+	abort := a.abortOnUnauthenticated
+	if len(shouldAbortOnUnauthenticated) > 0 {
+		abort = shouldAbortOnUnauthenticated[0]
+	}
+
 	return func(c *gin.Context) {
 		getAccessTokenFromCookie := func() string {
 			atCookie, _ := c.Cookie(a.cookieName)
@@ -106,7 +119,7 @@ func (a authentication) RequireAuthenticatedMiddleware(abortOnUnauthenticated bo
 		}
 
 		if len(at) == 0 {
-			if abortOnUnauthenticated {
+			if abort {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, a.errorResponse)
 				return
 			}
@@ -118,7 +131,7 @@ func (a authentication) RequireAuthenticatedMiddleware(abortOnUnauthenticated bo
 		claims := &jwt.MapClaims{}
 		err := a.ssw.ValidateAccessTokenWithClaims(at, claims)
 		if err != nil {
-			if abortOnUnauthenticated {
+			if abort {
 				if errors.Is(err, jwt.ErrTokenExpired) {
 					c.AbortWithStatusJSON(http.StatusUnauthorized, a.tokenExpiredResponse)
 				} else {
