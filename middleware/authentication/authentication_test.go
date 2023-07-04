@@ -55,9 +55,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
 				req.AddCookie(&cookie)
 
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
@@ -90,7 +90,7 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 
 				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
 				sswMock.On("ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims")).Return(nil).Run(func(fArg mock.Arguments) {
@@ -122,9 +122,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
 				req.AddCookie(&cookie)
 
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
@@ -157,7 +157,7 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 
 				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
 				sswMock.On("ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims")).Return(nil).Run(func(fArg mock.Arguments) {
@@ -186,9 +186,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				abortOnUnauthenticated: true,
 			},
 			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithErrorResponse(testString))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated), WithErrorResponse(testString))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {},
 			verify: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, w *httptest.ResponseRecorder, a args) {
@@ -208,9 +208,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				abortOnUnauthenticated: false,
 			},
 			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithErrorResponse(testString))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated), WithErrorResponse(testString))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
 				sswMock.AssertNotCalled(t, "ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims"))
@@ -233,7 +233,7 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
 				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithErrorResponse(testString))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {},
 			verify: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, w *httptest.ResponseRecorder, a args) {
@@ -252,9 +252,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				abortOnUnauthenticated: false,
 			},
 			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithErrorResponse(testString))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithErrorResponse(testString), WithAbortOnUnauthenticated(a.abortOnUnauthenticated))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
 				sswMock.AssertNotCalled(t, "ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims"))
@@ -279,7 +279,7 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 
 				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithErrorResponse(testString))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {},
 			verify: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, w *httptest.ResponseRecorder, a args) {
@@ -300,9 +300,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
 				req.Header.Set("Authorization", "Bearer this is a wrong auth header")
 
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithErrorResponse(testString))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithErrorResponse(testString), WithAbortOnUnauthenticated(a.abortOnUnauthenticated))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
 				sswMock.AssertNotCalled(t, "ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims"))
@@ -327,9 +327,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
 				req.AddCookie(&cookie)
 
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithErrorResponse(testString))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated), WithErrorResponse(testString))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
 				sswMock.On("ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims")).Return(testError).Once()
@@ -354,9 +354,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
 				req.AddCookie(&cookie)
 
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithErrorResponse(testString))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated), WithErrorResponse(testString))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
 				sswMock.On("ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims")).Return(testError).Once()
@@ -381,9 +381,9 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
 				req.AddCookie(&cookie)
 
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
 
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
@@ -416,9 +416,45 @@ func TestRequireAuthenticatedMiddleware(t *testing.T) {
 				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
 				req.AddCookie(&cookie)
 
-				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName))
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated))
 
-				r.Use(mw.RequireAuthenticatedMiddleware(a.abortOnUnauthenticated))
+				r.Use(mw.RequireAuthenticatedMiddleware())
+
+			},
+			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
+				sswMock.On("ValidateAccessTokenWithClaims", mock.AnythingOfType("string"), mock.AnythingOfType("*jwt.MapClaims")).Return(jwt.ErrTokenExpired).Run(func(fArg mock.Arguments) {
+					at := fArg.Get(0).(string)
+					assert.Equal(t, testJWTString, at)
+
+					jwtMap := fArg.Get(1).(*jwt.MapClaims)
+					m := *jwtMap
+					m["sub"] = testUsername
+				}).Once()
+			},
+			verify: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, w *httptest.ResponseRecorder, a args) {
+				assert.Equal(t, http.StatusOK, w.Code)
+				assert.Empty(t, w.Body.String())
+
+				sswMock.AssertExpectations(t)
+			},
+		},
+
+		{
+			name: "error_token_expired_no_abort_by_override",
+			args: args{
+				authType:               Cookie,
+				accessToken:            testJWTString,
+				contextKey:             "test-user",
+				cookieName:             cookieStr,
+				abortOnUnauthenticated: true,
+			},
+			setup: func(r *gin.Engine, goJWT ssw.SSWGoJWT, req *http.Request, a args) {
+				cookie := http.Cookie{Name: a.cookieName, Value: a.accessToken}
+				req.AddCookie(&cookie)
+
+				mw := NewAuthenticationMiddleware(&goJWT, WithAuthenticationType(a.authType), WithContextKey(a.contextKey), WithCookieName(a.cookieName), WithAbortOnUnauthenticated(a.abortOnUnauthenticated))
+
+				r.Use(mw.RequireAuthenticatedMiddleware(false))
 
 			},
 			mock: func(t *testing.T, sswMock *ssw.MockSSWGoJWT, a args) {
@@ -542,6 +578,15 @@ func TestFunctionalOptions(t *testing.T) {
 				WithTokenExpiredResponse(testError)(m)
 
 				assert.EqualValues(t, testError, m.tokenExpiredResponse)
+			},
+		},
+		{
+			name: "success_WithAbortOnUnauthenticated",
+			run: func(t *testing.T) {
+				m := &authentication{}
+				WithAbortOnUnauthenticated(false)(m)
+
+				assert.EqualValues(t, false, m.abortOnUnauthenticated)
 			},
 		},
 	}
