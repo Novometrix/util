@@ -20,7 +20,7 @@ type authentication struct {
 }
 
 type Authentication interface {
-	RequireAuthenticatedMiddleware() gin.HandlerFunc
+	RequireAuthenticatedMiddleware(abortOnUnauthenticated bool) gin.HandlerFunc
 }
 
 func NewAuthenticationMiddleware(ssw *ssw.SSWGoJWT, options ...func(*authentication)) Authentication {
@@ -74,7 +74,7 @@ func WithTokenExpiredResponse(r any) func(*authentication) {
 	}
 }
 
-func (a authentication) RequireAuthenticatedMiddleware() gin.HandlerFunc {
+func (a authentication) RequireAuthenticatedMiddleware(abortOnUnauthenticated bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		getAccessTokenFromCookie := func() string {
 			atCookie, _ := c.Cookie(a.cookieName)
@@ -106,21 +106,27 @@ func (a authentication) RequireAuthenticatedMiddleware() gin.HandlerFunc {
 		}
 
 		if len(at) == 0 {
-			c.JSON(http.StatusUnauthorized, a.errorResponse)
-			c.Abort()
+			if abortOnUnauthenticated {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, a.errorResponse)
+				return
+			}
+
+			c.Next()
 			return
 		}
 
 		claims := &jwt.MapClaims{}
 		err := a.ssw.ValidateAccessTokenWithClaims(at, claims)
 		if err != nil {
-			if errors.Is(err, jwt.ErrTokenExpired) {
-				c.JSON(http.StatusUnauthorized, a.tokenExpiredResponse)
+			if abortOnUnauthenticated {
+				if errors.Is(err, jwt.ErrTokenExpired) {
+					c.AbortWithStatusJSON(http.StatusUnauthorized, a.tokenExpiredResponse)
+				} else {
+					c.AbortWithStatusJSON(http.StatusUnauthorized, a.errorResponse)
+				}
 			} else {
-				c.JSON(http.StatusUnauthorized, a.errorResponse)
+				c.Next()
 			}
-
-			c.Abort()
 
 			return
 		}
